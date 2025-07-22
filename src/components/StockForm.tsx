@@ -16,7 +16,6 @@ export const StockForm = ({
   const [days, setDays] = useState<string>('10');
   // isSelecting is used to prevent the dropdown from opening when the user is selected a symbol
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
-  const [isSelected, setIsSelected] = useState<boolean>(false);
   const [symbolError, setSymbolError] = useState<string>('');
   const [daysError, setDaysError] = useState<string>('');
   const debouncedSymbol = useDebounce(symbol, 300);
@@ -40,14 +39,36 @@ export const StockForm = ({
     }
   }, [debouncedSymbol]);
 
+type ValidationErrors = {
+    symbol: string;
+    days: string;
+}
+
+  const validateInputs = (): ValidationErrors | false => {
+    const errors: ValidationErrors = {
+      symbol: '',
+      days: '',
+    };
+    if (!symbol) {
+        errors.symbol = 'Stock symbol is required';
+    }
+    if (!days) {
+      errors.days = 'Days is required';
+    }
+    const numericValue = days.replace(/[^0-9]/g, '');
+    if(numericValue !== days) {
+      errors.days = 'Please enter a valid number of days';
+    }
+    return errors.days || errors.symbol ? errors : false;
+  };
+
   return (
     <View style={styles.formContainer}>
       <Text style={styles.label}>Stock Symbol</Text>
       <TextInput
         value={symbol}
         onChangeText={(text) => {
-            setSymbol(text);
-            setIsSelected(false);
+            setSymbol(text.toUpperCase());
             setSymbolError('');
         }}
         accessibilityLabel="Stock symbol input or company name"
@@ -67,7 +88,6 @@ export const StockForm = ({
             symbols={filteredSymbols}
             onSelect={(text) => {
                 setIsSelecting(true);
-                setIsSelected(true);
                 setSymbolError('');
                 setSymbol(text);
                 setShowDropdown(false);
@@ -79,8 +99,8 @@ export const StockForm = ({
       <TextInput
         value={days}
         onChangeText={(text) => {
-            setDays(text);
-            setDaysError('');
+          setDays(text);
+          setDaysError('');
         }}
         onFocus={() => {
             setDaysError('');
@@ -96,27 +116,26 @@ export const StockForm = ({
       <TouchableOpacity
         style={styles.button}
         onPress={() => {
-          if (!symbol) {
-              setSymbolError('Stock symbol is required');
-              return;
+          const errors = validateInputs();
+          if(!errors) {
+            Keyboard.dismiss();
+            onSearch(symbol, parseInt(days, 10));
+            setShowDropdown(false);
+
+            return;
           }
-          if(!isSelected) {
-              setSymbolError('Please select a stock symbol from the dropdown');
-              return;
+          if(errors.symbol) {
+              setSymbolError(errors.symbol);
           }
-          if (!days) {
-              setDaysError('Days is required');
-              return;
+          if(errors.days) {
+              setDaysError(errors.days);
           }
-          Keyboard.dismiss();
-          onSearch(symbol, parseInt(days, 10));
-          setShowDropdown(false);
         }}
         accessibilityRole="button"
         accessibilityLabel="Get recommendation button"
         accessibilityHint="Tap to get recommendation"
       >
-        <Text style={styles.buttonText}>Get Recommendation</Text>
+        <Text style={styles.buttonText}>Get Recommendations</Text>
       </TouchableOpacity>
     </View>
   );
