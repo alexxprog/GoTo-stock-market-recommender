@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { RecommendedPointType } from '../utils/recommendation';
 import { Pagination } from './Pagination';
@@ -11,32 +11,24 @@ interface ResultsListProps {
   onPaginate: (page: number) => void;
 }
 
-export const ResultsList = ({ recommendations, itemsPerPage = 10, days, onPaginate }: ResultsListProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(days / itemsPerPage);
-  const [isChartVisible, setIsChartVisible] = useState(false);
+const RecommendationHeader = memo(() => (
+  <View style={styles.headerRow}>
+    <Text style={[styles.headerText, styles.headerDate]}>Date</Text>
+    <Text style={[styles.headerText, styles.headerPrice]}>Price</Text>
+    <Text style={[styles.headerText, styles.headerMentions]}>Mentions</Text>
+    <Text style={[styles.headerText, styles.headerAction]}>Action</Text>
+  </View>
+));
 
-  const paginate = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-    onPaginate(pageNumber);
-  };
-
-  if (recommendations.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No recommendations yet. Search for a stock to see recommendations.</Text>
-      </View>
-    );
-  }
-
+const RecommendationItem = memo(({ item }: { item: RecommendedPointType }) => {
   const icon = {
     'Buy': '🟢',
     'Sell': '🔴',
     'Hold': '🟡',
   }
 
-  const renderItem = ({ item, index }: { item: RecommendedPointType, index: number }) => (
-    <View key={`${item.date}-${index}`} style={styles.recommendationItem}>
+  return (
+    <View style={styles.recommendationItem}>
       <Text style={styles.dateText}>{item.date}</Text>
       <Text style={styles.priceText}>${item.price.toFixed(2)}</Text>
       <Text style={styles.mentionsText}>{item.mentions}</Text>
@@ -44,16 +36,22 @@ export const ResultsList = ({ recommendations, itemsPerPage = 10, days, onPagina
         {icon[item.recommendation as keyof typeof icon] || ''} {item.recommendation}
       </Text>
     </View>
-  );
+  )
+});
 
-  const renderHeader = () => (
-    <View style={styles.headerRow}>
-      <Text style={[styles.headerText, styles.headerDate]}>Date</Text>
-      <Text style={[styles.headerText, styles.headerPrice]}>Price</Text>
-      <Text style={[styles.headerText, styles.headerMentions]}>Mentions</Text>
-      <Text style={[styles.headerText, styles.headerAction]}>Action</Text>
-    </View>
-  );
+export const ResultsList = ({ recommendations, itemsPerPage = 10, days, onPaginate }: ResultsListProps) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isChartVisible, setIsChartVisible] = useState(false);
+  const totalPages = Math.ceil(days / itemsPerPage);
+
+  const paginate = useCallback((pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    onPaginate(pageNumber);
+  }, [onPaginate]);
+
+  const toggleChart = useCallback(() => {
+    setIsChartVisible(prev => !prev);
+  }, []);
 
   if (recommendations.length === 0) {
     return (
@@ -66,7 +64,7 @@ export const ResultsList = ({ recommendations, itemsPerPage = 10, days, onPagina
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.sectionTitle}>Recommendations</Text>
-      <Text style={styles.sectionSubTitle} onPress={() => setIsChartVisible(!isChartVisible)}>{isChartVisible ? 'Hide charts' : 'Show charts'}</Text>
+      <Text style={styles.sectionSubTitle} onPress={toggleChart}>{isChartVisible ? 'Hide charts' : 'Show charts'}</Text>
       <View style={styles.chartContainer}>
         {isChartVisible && (
           <View>
@@ -77,8 +75,8 @@ export const ResultsList = ({ recommendations, itemsPerPage = 10, days, onPagina
       </View>
 
       <View style={styles.listContent}>
-        {renderHeader()}
-        {recommendations.map((item, index) => renderItem({ item, index }))}
+        <RecommendationHeader />
+        {recommendations.map((item, index) => <RecommendationItem key={`${item.date}-${index}`} item={item} />)}
       </View>
       <Pagination
         totalPages={totalPages}
