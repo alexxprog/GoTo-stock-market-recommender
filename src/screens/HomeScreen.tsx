@@ -39,9 +39,7 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <Header />
 
-      <StockForm
-        onSearch={handleSearch}
-      />
+      <StockForm onSearch={handleSearch} />
 
       <ResultsList
         recommendations={recommendations}
@@ -53,11 +51,13 @@ const HomeScreen = () => {
   );
 };
 
+const GRAY_555 = '#555';
+
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: GRAY_555,
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
 });
 

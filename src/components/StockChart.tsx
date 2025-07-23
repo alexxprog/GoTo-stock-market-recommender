@@ -23,43 +23,48 @@ const StockChart: React.FC<Props> = ({ data, field, title }) => {
 
   return (
     <View>
-        <Text style={styles.title}>{title.charAt(0).toUpperCase() + title.slice(1)}</Text>
-        <LineChart
-          data={chartData}
-          width={screenWidth - 40}
-          height={220}
-          yAxisSuffix={field === 'price' ? '$' : ''}
-          chartConfig={{
-            backgroundColor: '#fff',
-            backgroundGradientFrom: '#f8f9fa',
-            backgroundGradientTo: '#e9ecef',
-            decimalPlaces: 2,
-            color: (opacity = 1) => `rgba(33, 37, 41, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(33, 37, 41, ${opacity})`,
-            style: { borderRadius: 16 },
-            propsForDots: {
-              r: '3',
-              strokeWidth: '1',
-              stroke: '#555',
-            },
-          }}
-          bezier
-          style={{
-            marginVertical: 8,
-            borderRadius: 16,
-          }}
-        />
+      <Text style={styles.title}>{title.charAt(0).toUpperCase() + title.slice(1)}</Text>
+      <LineChart
+        data={chartData}
+        width={screenWidth - 40}
+        height={220}
+        yAxisSuffix={field === 'price' ? '$' : ''}
+        chartConfig={{
+          backgroundColor: '#fff',
+          backgroundGradientFrom: '#f8f9fa',
+          backgroundGradientTo: '#e9ecef',
+          decimalPlaces: 2,
+          color: (opacity = 1) => `rgba(33, 37, 41, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(33, 37, 41, ${opacity})`,
+          style: { borderRadius: 16 },
+          propsForDots: {
+            r: '3',
+            strokeWidth: '1',
+            stroke: '#555',
+          },
+        }}
+        bezier
+        style={styles.chart}
+      />
     </View>
   );
 };
 
 export default StockChart;
 
+const COLORS = {
+  gray333: '#333',
+};
+
 const styles = StyleSheet.create({
+  chart: {
+    borderRadius: 16,
+    marginVertical: 8,
+  },
   title: {
+    color: COLORS.gray333,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 15,
-    color: '#333',
   },
 });

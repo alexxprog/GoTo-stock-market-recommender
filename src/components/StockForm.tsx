@@ -9,9 +9,7 @@ interface StockFormProps {
   onSearch: (text: string, daysCount: number) => void;
 }
 
-export const StockForm = ({
-  onSearch,
-}: StockFormProps) => {
+export const StockForm = ({ onSearch }: StockFormProps) => {
   const [symbol, setSymbol] = useState<string>('');
   const [days, setDays] = useState<string>('10');
   // isSelecting is used to prevent the dropdown from opening when the user is selected a symbol
@@ -24,8 +22,8 @@ export const StockForm = ({
 
   useEffect(() => {
     if (isSelecting) {
-        setIsSelecting(false);
-        return;
+      setIsSelecting(false);
+      return;
     }
 
     if (debouncedSymbol) {
@@ -37,12 +35,12 @@ export const StockForm = ({
       setFilteredSymbols([]);
       setShowDropdown(false);
     }
-  }, [debouncedSymbol]);
+  }, [debouncedSymbol, isSelecting]);
 
-type ValidationErrors = {
+  type ValidationErrors = {
     symbol: string;
     days: string;
-}
+  };
 
   const validateInputs = (): ValidationErrors | false => {
     const errors: ValidationErrors = {
@@ -50,13 +48,13 @@ type ValidationErrors = {
       days: '',
     };
     if (!symbol) {
-        errors.symbol = 'Stock symbol is required';
+      errors.symbol = 'Stock symbol is required';
     }
     if (!days) {
       errors.days = 'Days is required';
     }
     const numericValue = days.replace(/[^0-9]/g, '');
-    if(numericValue !== days) {
+    if (numericValue !== days) {
       errors.days = 'Please enter a valid number of days';
     }
     return errors.days || errors.symbol ? errors : false;
@@ -68,8 +66,8 @@ type ValidationErrors = {
       <TextInput
         value={symbol}
         onChangeText={(text) => {
-            setSymbol(text.toUpperCase());
-            setSymbolError('');
+          setSymbol(text.toUpperCase());
+          setSymbolError('');
         }}
         accessibilityLabel="Stock symbol input or company name"
         placeholder="Enter stock symbol (e.g., AAPL, MSFT, GOOGL) or company name"
@@ -77,22 +75,23 @@ type ValidationErrors = {
         autoCapitalize="characters"
         style={styles.input}
         onFocus={() => {
-            setSymbolError('');
+          setSymbolError('');
         }}
       />
       {symbolError && <Notification text={symbolError} type="error" />}
 
       {showDropdown && (
         <Dropdown
-            key={filteredSymbols.length}
-            symbols={filteredSymbols}
-            onSelect={(text) => {
-                setIsSelecting(true);
-                setSymbolError('');
-                setSymbol(text);
-                setShowDropdown(false);
-                Keyboard.dismiss();
-            }} />
+          key={filteredSymbols.length}
+          symbols={filteredSymbols}
+          onSelect={(text) => {
+            setIsSelecting(true);
+            setSymbolError('');
+            setSymbol(text);
+            setShowDropdown(false);
+            Keyboard.dismiss();
+          }}
+        />
       )}
 
       <Text style={styles.label}>Time Window (Days)</Text>
@@ -103,7 +102,7 @@ type ValidationErrors = {
           setDaysError('');
         }}
         onFocus={() => {
-            setDaysError('');
+          setDaysError('');
         }}
         accessibilityLabel="Time window in days input"
         placeholder="Enter number of days (e.g., 10, 30, 90)"
@@ -117,18 +116,18 @@ type ValidationErrors = {
         style={styles.button}
         onPress={() => {
           const errors = validateInputs();
-          if(!errors) {
+          if (!errors) {
             Keyboard.dismiss();
             onSearch(symbol, parseInt(days, 10));
             setShowDropdown(false);
 
             return;
           }
-          if(errors.symbol) {
-              setSymbolError(errors.symbol);
+          if (errors.symbol) {
+            setSymbolError(errors.symbol);
           }
-          if(errors.days) {
-              setDaysError(errors.days);
+          if (errors.days) {
+            setDaysError(errors.days);
           }
         }}
         accessibilityRole="button"
@@ -141,33 +140,39 @@ type ValidationErrors = {
   );
 };
 
+const COLORS = {
+  blue: '#007AFF',
+  white: '#fff',
+  gray: '#ccc',
+};
+
 const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    backgroundColor: COLORS.blue,
+    borderRadius: 5,
+    marginTop: 10,
+    padding: 15,
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   formContainer: {
     marginBottom: 20,
   },
+  input: {
+    borderColor: COLORS.gray,
+    borderRadius: 5,
+    borderWidth: 1,
+    fontSize: 16,
+    marginBottom: 15,
+    padding: 10,
+  },
   label: {
     fontSize: 16,
-    marginBottom: 5,
     fontWeight: '500',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 5,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    marginBottom: 5,
   },
 });

@@ -10,9 +10,11 @@ export default function App() {
   );
 }
 
+const GRAY_FFF = '#fff';
+
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: GRAY_FFF,
     flex: 1,
-    backgroundColor: '#fff',
   },
 });
