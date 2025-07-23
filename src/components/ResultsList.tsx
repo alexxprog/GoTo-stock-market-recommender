@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { RecommendedPointType } from '../utils/recommendation';
 import { Pagination } from './Pagination';
+import StockChart from './StockChart';
 
 interface ResultsListProps {
   recommendations: RecommendedPointType[];
@@ -13,6 +14,7 @@ interface ResultsListProps {
 export const ResultsList = ({ recommendations, itemsPerPage = 10, days, onPaginate }: ResultsListProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(days / itemsPerPage);
+  const [isChartVisible, setIsChartVisible] = useState(false);
 
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -64,6 +66,16 @@ export const ResultsList = ({ recommendations, itemsPerPage = 10, days, onPagina
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.sectionTitle}>Recommendations</Text>
+      <Text style={styles.sectionSubTitle} onPress={() => setIsChartVisible(!isChartVisible)}>{isChartVisible ? 'Hide charts' : 'Show charts'}</Text>
+      <View style={styles.chartContainer}>
+        {isChartVisible && (
+          <View>
+            <StockChart data={recommendations} field="price" title="Price Chart" />
+            <StockChart data={recommendations} field="mentions" title="Mentions Chart" />
+          </View>
+        )}
+      </View>
+
       <View style={styles.listContent}>
         {renderHeader()}
         {recommendations.map((item, index) => renderItem({ item, index }))}
@@ -87,6 +99,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  sectionSubTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 15,
     color: '#333',
@@ -159,5 +177,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     fontSize: 16,
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 20,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 5,
+    fontWeight: '500',
   },
 });

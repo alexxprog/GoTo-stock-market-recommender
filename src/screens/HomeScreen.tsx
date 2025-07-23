@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { getStockData } from '../services/stockService';
 import { generateRecommendations, RecommendedPointType } from '../utils/recommendation';
 import { Header } from '../components/Header';
