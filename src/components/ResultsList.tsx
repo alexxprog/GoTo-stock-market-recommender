@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { memo, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { RecommendedPointType } from '../utils/recommendation';
 import { Pagination } from './Pagination';
 import StockChart from './StockChart';
@@ -56,6 +56,7 @@ export const ResultsList = ({
   error,
 }: ResultsListProps) => {
   const dispatch = useAppDispatch();
+  const [showGraphs, setShowGraphs] = useState(false);
 
   const onPaginate = (page: number) => {
     dispatch(setCurrentPage(page));
@@ -87,8 +88,15 @@ export const ResultsList = ({
 
   return (
     <View style={styles.container}>
-      <StockChart data={recommendations} field="price" title="Price Chart" />
-      <StockChart data={recommendations} field="mentions" title="Mentions Chart" />
+      <TouchableOpacity style={styles.button} onPress={() => setShowGraphs(!showGraphs)}>
+        <Text style={styles.buttonText}>{showGraphs ? 'Hide Graphs' : 'Show Graphs'}</Text>
+      </TouchableOpacity>
+      {showGraphs && (
+        <>
+          <StockChart data={recommendations} field="price" title="Price Chart" />
+          <StockChart data={recommendations} field="mentions" title="Mentions Chart" />
+        </>
+      )}
       <RecommendationHeader />
       {recommendations.map((item, index) => (
         <RecommendationItem key={`${item.date}-${index}`} item={item} />
@@ -103,6 +111,18 @@ export const ResultsList = ({
 };
 
 const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    backgroundColor: colors.blue,
+    borderRadius: 5,
+    marginTop: 10,
+    padding: 15,
+  },
+  buttonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   container: {
     backgroundColor: colors.white,
     borderRadius: 8,
@@ -112,7 +132,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: colors.gray[700],
-    flex: 2,
+    flex: 1,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -134,10 +154,10 @@ const styles = StyleSheet.create({
   },
   headerAction: {
     flex: 1,
-    textAlign: 'right',
+    textAlign: 'center',
   },
   headerDate: {
-    flex: 2,
+    flex: 1,
   },
   headerMentions: {
     flex: 1,
@@ -145,7 +165,7 @@ const styles = StyleSheet.create({
   },
   headerPrice: {
     flex: 1,
-    textAlign: 'right',
+    textAlign: 'center',
   },
   headerRow: {
     borderBottomColor: colors.gray[200],
@@ -172,7 +192,7 @@ const styles = StyleSheet.create({
   priceText: {
     color: colors.gray[800],
     flex: 1,
-    textAlign: 'right',
+    textAlign: 'center',
   },
   recommendationItem: {
     alignItems: 'center',
@@ -184,6 +204,6 @@ const styles = StyleSheet.create({
   recommendationText: {
     flex: 1,
     fontWeight: '500',
-    textAlign: 'right',
+    textAlign: 'left',
   },
 });
