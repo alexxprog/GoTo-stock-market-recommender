@@ -5,7 +5,6 @@ export interface StockDataPointType {
 }
 
 export async function getStockData(
-  symbol: string,
   days: number = 10,
   daysPerPage: number = 10,
   page: number = 1,
@@ -26,6 +25,8 @@ export async function getStockData(
       });
     }
 
-    resolve(data);
+    setTimeout(() => {
+      resolve(data);
+    }, 1000);
   });
 }

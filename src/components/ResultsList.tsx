@@ -1,14 +1,19 @@
-import React, { useState, useCallback, memo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { RecommendedPointType } from '../utils/recommendation';
 import { Pagination } from './Pagination';
 import StockChart from './StockChart';
+import { useAppDispatch } from '../store/hooks';
+import { setCurrentPage } from '../store/stockSlice';
+import { colors } from '../theme/colors';
 
 interface ResultsListProps {
   recommendations: RecommendedPointType[];
-  itemsPerPage?: number;
+  itemsPerPage: number;
   days: number;
-  onPaginate: (page: number) => void;
+  currentPage: number;
+  loading: boolean;
+  error: string | null;
 }
 
 const RecommendationHeader = memo(() => (
@@ -44,102 +49,95 @@ const RecommendationItem = memo(({ item }: { item: RecommendedPointType }) => {
 
 export const ResultsList = ({
   recommendations,
-  itemsPerPage = 10,
+  itemsPerPage,
   days,
-  onPaginate,
+  currentPage,
+  loading,
+  error,
 }: ResultsListProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isChartVisible, setIsChartVisible] = useState(false);
-  const totalPages = Math.ceil(days / itemsPerPage);
+  const dispatch = useAppDispatch();
 
-  const paginate = useCallback(
-    (pageNumber: number) => {
-      setCurrentPage(pageNumber);
-      onPaginate(pageNumber);
-    },
-    [onPaginate],
-  );
+  const onPaginate = (page: number) => {
+    dispatch(setCurrentPage(page));
+  };
 
-  const toggleChart = useCallback(() => {
-    setIsChartVisible((prev) => !prev);
-  }, []);
+  if (loading && recommendations.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.blue} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
 
   if (recommendations.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
-          No recommendations yet. Search for a stock to see recommendations.
-        </Text>
+        <Text style={styles.emptyText}>No data available. Please perform a search.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.sectionTitle}>Recommendations</Text>
-      <Text style={styles.sectionSubTitle} onPress={toggleChart}>
-        {isChartVisible ? 'Hide charts' : 'Show charts'}
-      </Text>
-      <View style={styles.chartContainer}>
-        {isChartVisible && (
-          <View>
-            <StockChart data={recommendations} field="price" title="Price Chart" />
-            <StockChart data={recommendations} field="mentions" title="Mentions Chart" />
-          </View>
-        )}
-      </View>
-
-      <View style={styles.listContent}>
-        <RecommendationHeader />
-        {recommendations.map((item, index) => (
-          <RecommendationItem key={`${item.date}-${index}`} item={item} />
-        ))}
-      </View>
-      <Pagination totalPages={totalPages} currentPage={currentPage} paginate={paginate} />
-    </ScrollView>
+    <View style={styles.container}>
+      <StockChart data={recommendations} field="price" title="Price Chart" />
+      <StockChart data={recommendations} field="mentions" title="Mentions Chart" />
+      <RecommendationHeader />
+      {recommendations.map((item, index) => (
+        <RecommendationItem key={`${item.date}-${index}`} item={item} />
+      ))}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={Math.ceil(days / itemsPerPage)}
+        paginate={onPaginate}
+      />
+    </View>
   );
 };
 
-const COLORS = {
-  gray666: '#666',
-  gray333: '#333',
-  grayDDD: '#ddd',
-  grayF0F: '#f0f0f0',
-};
-
 const styles = StyleSheet.create({
-  chartContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 20,
-  },
   container: {
+    backgroundColor: colors.white,
+    borderRadius: 8,
     flex: 1,
-    width: '100%',
+    marginTop: 10,
+    padding: 10,
   },
   dateText: {
-    color: COLORS.gray666,
-    flex: 1,
-    fontSize: 14,
+    color: colors.gray[700],
+    flex: 2,
   },
   emptyContainer: {
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
     padding: 20,
   },
   emptyText: {
-    color: COLORS.gray666,
-    fontSize: 16,
+    color: colors.gray[500],
+    textAlign: 'center',
+  },
+  errorContainer: {
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    marginTop: 10,
+    padding: 20,
+  },
+  errorText: {
+    color: colors.black,
     textAlign: 'center',
   },
   headerAction: {
     flex: 1,
-    textAlign: 'center',
+    textAlign: 'right',
   },
   headerDate: {
-    flex: 1,
-    textAlign: 'center',
+    flex: 2,
   },
   headerMentions: {
     flex: 1,
@@ -147,58 +145,45 @@ const styles = StyleSheet.create({
   },
   headerPrice: {
     flex: 1,
-    textAlign: 'center',
+    textAlign: 'right',
   },
   headerRow: {
-    borderBottomColor: COLORS.grayDDD,
+    borderBottomColor: colors.gray[200],
     borderBottomWidth: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 5,
     paddingVertical: 10,
   },
   headerText: {
-    color: COLORS.gray333,
+    color: colors.gray[500],
     fontWeight: 'bold',
   },
-  listContent: {
-    paddingBottom: 20,
+  loadingContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
   },
   mentionsText: {
+    color: colors.gray[800],
     flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
     textAlign: 'center',
   },
   priceText: {
+    color: colors.gray[800],
     flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
+    textAlign: 'right',
   },
   recommendationItem: {
     alignItems: 'center',
-    borderBottomColor: COLORS.grayF0F,
+    borderBottomColor: colors.gray[200],
     borderBottomWidth: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingVertical: 12,
   },
   recommendationText: {
     flex: 1,
     fontWeight: '500',
-    textAlign: 'center',
-  },
-  sectionSubTitle: {
-    color: COLORS.gray333,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    color: COLORS.gray333,
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
+    textAlign: 'right',
   },
 });

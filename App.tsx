@@ -1,20 +1,23 @@
 import React from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
+import { Provider } from 'react-redux';
+import { store } from './src/store/store';
 import HomeScreen from './src/screens/HomeScreen';
+import { colors } from './src/theme/colors';
 
 export default function App() {
   return (
     <SafeAreaView style={styles.container}>
-      <HomeScreen />
+      <Provider store={store}>
+        <HomeScreen />
+      </Provider>
     </SafeAreaView>
   );
 }
 
-const GRAY_FFF = '#fff';
-
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: GRAY_FFF,
+    backgroundColor: colors.background,
     flex: 1,
   },
 });

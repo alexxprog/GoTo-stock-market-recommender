@@ -1,41 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
 import { fetchSymbols, StockSymbolType } from '../services/symbolService';
 import { useDebounce } from '../hooks/useDebounce';
 import { Dropdown } from './Dropdown';
 import { Notification } from './Notification';
+import { useAppDispatch } from '../store/hooks';
+import { setDays, setSymbol, setCurrentPage } from '../store/stockSlice';
+import { colors } from '../theme/colors';
 
-interface StockFormProps {
-  onSearch: (text: string, daysCount: number) => void;
-}
+export type StockFormProps = {
+  days: number;
+  symbol: string;
+  loading: boolean;
+};
 
-export const StockForm = ({ onSearch }: StockFormProps) => {
-  const [symbol, setSymbol] = useState<string>('');
-  const [days, setDays] = useState<string>('10');
-  // isSelecting is used to prevent the dropdown from opening when the user is selected a symbol
-  const [isSelecting, setIsSelecting] = useState<boolean>(false);
+export const StockForm = ({ days, symbol, loading }: StockFormProps) => {
+  const dispatch = useAppDispatch();
+  const [symbolInput, setSymbolInput] = useState<string>(symbol);
+  const [daysInput, setDaysInput] = useState<string>(days.toString());
+  // selectedFromDropdownRef is used to prevent the dropdown from opening when the user is selected a symbol
+  const selectedFromDropdownRef = useRef<string>('');
   const [symbolError, setSymbolError] = useState<string>('');
   const [daysError, setDaysError] = useState<string>('');
-  const debouncedSymbol = useDebounce(symbol, 300);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [filteredSymbols, setFilteredSymbols] = useState<StockSymbolType[]>([]);
+  const debouncedSymbol = useDebounce(symbolInput, 300);
+
+  const handleSearch = (search: string, daysCount: number) => {
+    if (loading) return;
+
+    dispatch(setCurrentPage(1));
+    dispatch(setSymbol(search));
+    dispatch(setDays(daysCount));
+  };
+
+  const handleSelectSymbol = useCallback((text: string) => {
+    selectedFromDropdownRef.current = text;
+    setSymbolInput(text);
+    setSymbolError('');
+    setFilteredSymbols([]);
+    setShowDropdown(false);
+    Keyboard.dismiss();
+  }, []);
 
   useEffect(() => {
-    if (isSelecting) {
-      setIsSelecting(false);
+    if (selectedFromDropdownRef.current === debouncedSymbol) {
+      selectedFromDropdownRef.current = '';
       return;
     }
 
     if (debouncedSymbol) {
       fetchSymbols(debouncedSymbol).then((filtered) => {
-        setFilteredSymbols(filtered);
-        setShowDropdown(filtered.length > 0);
+        if (!selectedFromDropdownRef.current) {
+          setFilteredSymbols(filtered);
+          setShowDropdown(filtered.length > 0);
+        }
       });
     } else {
       setFilteredSymbols([]);
       setShowDropdown(false);
     }
-  }, [debouncedSymbol, isSelecting]);
+  }, [debouncedSymbol]);
 
   type ValidationErrors = {
     symbol: string;
@@ -47,14 +72,14 @@ export const StockForm = ({ onSearch }: StockFormProps) => {
       symbol: '',
       days: '',
     };
-    if (!symbol) {
+    if (!symbolInput) {
       errors.symbol = 'Stock symbol is required';
     }
-    if (!days) {
+    if (!daysInput) {
       errors.days = 'Days is required';
     }
-    const numericValue = days.replace(/[^0-9]/g, '');
-    if (numericValue !== days) {
+    const numericValue = daysInput.replace(/[^0-9]/g, '');
+    if (numericValue !== daysInput) {
       errors.days = 'Please enter a valid number of days';
     }
     return errors.days || errors.symbol ? errors : false;
@@ -64,9 +89,9 @@ export const StockForm = ({ onSearch }: StockFormProps) => {
     <View style={styles.formContainer}>
       <Text style={styles.label}>Stock Symbol</Text>
       <TextInput
-        value={symbol}
+        value={symbolInput}
         onChangeText={(text) => {
-          setSymbol(text.toUpperCase());
+          setSymbolInput(text.toUpperCase());
           setSymbolError('');
         }}
         accessibilityLabel="Stock symbol input or company name"
@@ -77,6 +102,7 @@ export const StockForm = ({ onSearch }: StockFormProps) => {
         onFocus={() => {
           setSymbolError('');
         }}
+        editable={!loading}
       />
       {symbolError && <Notification text={symbolError} type="error" />}
 
@@ -85,20 +111,16 @@ export const StockForm = ({ onSearch }: StockFormProps) => {
           key={filteredSymbols.length}
           symbols={filteredSymbols}
           onSelect={(text) => {
-            setIsSelecting(true);
-            setSymbolError('');
-            setSymbol(text);
-            setShowDropdown(false);
-            Keyboard.dismiss();
+            handleSelectSymbol(text);
           }}
         />
       )}
 
       <Text style={styles.label}>Time Window (Days)</Text>
       <TextInput
-        value={days}
+        value={daysInput}
         onChangeText={(text) => {
-          setDays(text);
+          setDaysInput(text);
           setDaysError('');
         }}
         onFocus={() => {
@@ -109,6 +131,7 @@ export const StockForm = ({ onSearch }: StockFormProps) => {
         placeholderTextColor="#999"
         keyboardType="numeric"
         style={styles.input}
+        editable={!loading}
       />
       {daysError && <Notification text={daysError} type="error" />}
 
@@ -118,7 +141,7 @@ export const StockForm = ({ onSearch }: StockFormProps) => {
           const errors = validateInputs();
           if (!errors) {
             Keyboard.dismiss();
-            onSearch(symbol, parseInt(days, 10));
+            handleSearch(symbolInput, parseInt(daysInput, 10));
             setShowDropdown(false);
 
             return;
@@ -140,22 +163,16 @@ export const StockForm = ({ onSearch }: StockFormProps) => {
   );
 };
 
-const COLORS = {
-  blue: '#007AFF',
-  white: '#fff',
-  gray: '#ccc',
-};
-
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    backgroundColor: COLORS.blue,
+    backgroundColor: colors.blue,
     borderRadius: 5,
     marginTop: 10,
     padding: 15,
   },
   buttonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -163,7 +180,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    borderColor: COLORS.gray,
+    borderColor: colors.gray[300],
     borderRadius: 5,
     borderWidth: 1,
     fontSize: 16,

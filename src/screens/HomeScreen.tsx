@@ -1,61 +1,58 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import { getStockData } from '../services/stockService';
-import { generateRecommendations, RecommendedPointType } from '../utils/recommendation';
+import React, { useEffect, useCallback } from 'react';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { Header } from '../components/Header';
 import { StockForm } from '../components/StockForm';
 import { ResultsList } from '../components/ResultsList';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchStockData, selectStockState } from '../store/stockSlice';
+import { colors } from '../theme/colors';
 
 const HomeScreen = () => {
-  const daysPerPage = 10;
-  const [recommendations, setRecommendations] = useState<RecommendedPointType[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const symbol = useRef('');
-  const days = useRef(0);
-  const paginate = useCallback((page: number) => {
-    setCurrentPage(page);
-    loadData(page);
-  }, []);
+  const dispatch = useAppDispatch();
 
-  const loadData = async (page: number) => {
-    if (!symbol.current || !days.current) {
-      setRecommendations([]);
-      return;
-    }
-    const data = await getStockData(symbol.current, days.current, daysPerPage, page);
-    const withRecs = generateRecommendations(data);
-    setRecommendations(withRecs);
-  };
+  const { symbol, days, recommendations, currentPage, itemsPerPage, error, loading } =
+    useAppSelector(selectStockState);
 
-  const handleSearch = async (text: string, daysCount: number) => {
-    symbol.current = text;
-    days.current = daysCount;
-    // Not sure if we need to reset the page to 1
-    // setCurrentPage(1);
-    await loadData(currentPage);
-  };
+  const loadData = useCallback(
+    (page: number) => {
+      if (!symbol || !days) return;
+
+      dispatch(
+        fetchStockData({
+          days,
+          page,
+          itemsPerPage,
+        }),
+      );
+    },
+    [dispatch, days, symbol, itemsPerPage],
+  );
+
+  useEffect(() => {
+    loadData(currentPage);
+  }, [symbol, days, itemsPerPage, currentPage, loadData]);
 
   return (
     <View style={styles.container}>
       <Header />
-
-      <StockForm onSearch={handleSearch} />
-
-      <ResultsList
-        recommendations={recommendations}
-        itemsPerPage={daysPerPage}
-        days={days.current}
-        onPaginate={paginate}
-      />
+      <ScrollView>
+        <StockForm days={days} symbol={symbol} loading={loading} />
+        <ResultsList
+          recommendations={recommendations}
+          itemsPerPage={itemsPerPage}
+          days={days}
+          currentPage={currentPage}
+          error={error}
+          loading={loading}
+        />
+      </ScrollView>
     </View>
   );
 };
 
-const GRAY_555 = '#555';
-
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: GRAY_555,
+    backgroundColor: colors.background,
     flex: 1,
     padding: 20,
   },
