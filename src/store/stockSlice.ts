@@ -2,21 +2,6 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { getStockData } from '../services/stockService';
 import { generateRecommendations, RecommendedPointType } from '../utils/recommendation';
 
-type StockTradeType = {
-  symbol: string;
-  price: number;
-  date: string;
-  action: string;
-  amount: number;
-};
-
-type StockUserType = {
-  name: string;
-  bank: number;
-  itemsPerPage: number;
-  trades: StockTradeType[];
-};
-
 interface StockStateType {
   symbol: string;
   days: number;
@@ -25,7 +10,6 @@ interface StockStateType {
   itemsPerPage: number;
   loading: boolean;
   error: string | null;
-  user: StockUserType | null;
 }
 
 const initialState: StockStateType = {
@@ -36,7 +20,6 @@ const initialState: StockStateType = {
   itemsPerPage: 10,
   loading: false,
   error: null,
-  user: null,
 };
 
 export const fetchStockData = createAsyncThunk(
@@ -69,9 +52,6 @@ const stockSlice = createSlice({
       state.currentPage = action.payload;
     },
     resetStockState: () => initialState,
-    setUser: (state, action: PayloadAction<StockUserType>) => {
-      state.user = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder

@@ -1,14 +1,16 @@
 import React, { useEffect, useCallback } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { Header } from '../components/Header';
 import { StockForm } from '../components/StockForm';
 import { ResultsList } from '../components/ResultsList';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchStockData, selectStockState } from '../store/stockSlice';
 import { colors } from '../theme/colors';
+import { selectAuthState } from '../store/authSlice';
 
 const HomeScreen = () => {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector(selectAuthState);
 
   const { symbol, days, recommendations, currentPage, itemsPerPage, error, loading } =
     useAppSelector(selectStockState);
